@@ -105,6 +105,29 @@ class _InventoryPageState extends State<InventoryPage> {
 
     if (confirm != true) return;
 
+    if (item.title == "오늘의 명언 카드") {
+      final List<String> quotes = [
+        "행동이 운명을 결정한다.",
+        "성공은 준비된 자에게 온다.",
+        "오늘의 노력은 내일의 성과다.",
+        "꾸준함이 열쇠다.",
+        "포기하지 않는 자가 이긴다.",
+        // 필요하면 더 추가
+      ];
+      final random =
+          quotes[DateTime.now().millisecondsSinceEpoch % quotes.length];
+
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.bottomSlide,
+        title: "오늘의 명언",
+        desc: '"$random"',
+        btnOkOnPress: () {},
+        btnOkText: "확인",
+      ).show();
+    }
+
     // logs 중 사용되지 않은 로그를 하나 찾아서 업데이트
     final logs = raw["logs"] as List<dynamic>? ?? [];
     final now = DateTime.now().toIso8601String();
@@ -137,7 +160,11 @@ class _InventoryPageState extends State<InventoryPage> {
 
   bool shouldShowUseButton(Item item, Map<String, dynamic> raw) {
     final remain = (raw["quantity"] ?? 0) - (raw["usedQuantity"] ?? 0);
-    return item.title != "x1.2경험치 부스트" && item.title != "라이벌 신청권" && remain > 0;
+    return item.title != "x1.2경험치 부스트" &&
+        item.title != "라이벌 신청권" &&
+        item.title != "방어권" &&
+        item.title != "닉네임 변경" &&
+        remain > 0;
   }
 
   @override

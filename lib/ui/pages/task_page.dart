@@ -76,6 +76,9 @@ class _TaskPageState extends State<TaskPage> {
     }
 
     list.sort((a, b) {
+      if (a.isDone != b.isDone) {
+        return a.isDone == true ? 1 : -1;
+      }
       int cmp;
       switch (_sortOption) {
         case SortOption.priority:

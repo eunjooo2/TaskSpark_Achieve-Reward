@@ -41,7 +41,9 @@ class _TaskFormState extends State<TaskForm> {
       _startDate = t.startDate;
       _endDate = t.endDate;
       _priority = double.tryParse(t.priority ?? '3') ?? 3;
-      _isRepeating = (t.repeatPeriod != null && t.repeatPeriod!.isNotEmpty);
+      _isRepeating = (t.repeatPeriod != null &&
+          t.repeatPeriod!.isNotEmpty &&
+          t.isRepeatingTask == true);
       _repeatCtrl.text = t.repeatPeriod ?? '';
       _chosenCategory = widget.categories.firstWhere(
         (c) => c.id == t.categoryId,
