@@ -127,7 +127,7 @@ class _BlockedUserPageState extends State<BlockedUserPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "차단 친구 설정",
+          "차단 친구 관리",
           style: TextStyle(
             color: Theme.of(context).colorScheme.secondary,
           ),
