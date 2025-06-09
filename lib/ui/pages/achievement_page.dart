@@ -50,6 +50,22 @@ class _AchievementPageState extends State<AchievementPage> {
     return false;
   }
 
+  String _convertTierKor(String tier) {
+    switch (tier) {
+      case "bronze":
+        return "브론즈";
+      case "silver":
+        return "실버";
+      case "gold":
+        return "골드";
+      case "platinum":
+        return "플레티넘";
+      case "diamond":
+        return "다이아몬드";
+    }
+    return "";
+  }
+
   Future<void> _fetchAchiv() async {
     final achivResult = await AchievementService().getAchievementList();
     final userMetaData = await AchievementService().getCurrentMetaData();
@@ -156,7 +172,8 @@ class _AchievementPageState extends State<AchievementPage> {
               // 경험치 보상
               if (rewardData["exp"] != null) {
                 rewardWidgets.add(
-                  Text("• $tier: 경험치 ${rewardData["exp"]}XP",
+                  Text(
+                      "• ${achievement.isOnce ? "보상" : _convertTierKor(tier)}: 경험치 ${rewardData["exp"]}XP",
                       style: TextStyle(fontSize: 15.sp)),
                 );
               }
@@ -169,16 +186,10 @@ class _AchievementPageState extends State<AchievementPage> {
                   final String itemName = itemMap[itemId]?.title ?? itemId;
 
                   rewardWidgets.add(
-                    Text("• $tier: $itemName × $amount",
+                    Text(
+                        "• ${achievement.isOnce ? "보상" : _convertTierKor(tier)}: $itemName × $amount",
                         style: TextStyle(fontSize: 15.sp)),
                   );
-                }
-              }
-              print("🎯 보상 아이템 ID들:");
-              if (rewardData["items"] != null) {
-                for (var item in rewardData["items"]) {
-                  final itemId = item["id"];
-                  print("🆔 $itemId → ${itemMap[itemId]?.title}");
                 }
               }
 
