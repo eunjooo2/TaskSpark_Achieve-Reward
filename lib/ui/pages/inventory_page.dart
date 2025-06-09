@@ -1,4 +1,6 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:task_spark/data/user.dart';
 import 'package:task_spark/data/item.dart';
 import 'package:task_spark/service/item_service.dart';
@@ -168,97 +170,119 @@ class _InventoryPageState extends State<InventoryPage> {
                     final purchasedTime = lastLog?["purchasedTime"] ?? "알 수 없음";
                     final dueDate = lastLog?["dueDate"] ?? "없음";
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 3,
-                      color: const Color(0xFF2A241F),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                              ),
-                              child: ClipOval(
-                                child: item.image.isNotEmpty
-                                    ? Container(
-                                        width: 70,
-                                        height: 70,
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.white,
-                                        ),
-                                        child: Image.network(
-                                          item.imageUrl,
-                                          fit: BoxFit.contain,
-                                          errorBuilder: (_, __, ___) =>
-                                              const Icon(Icons.broken_image),
-                                        ),
-                                      )
-                                    : const Icon(Icons.image),
-                              ),
+                    return InkWell(
+                      onTap: () {
+                        AwesomeDialog(
+                          context: context,
+                          dialogType: DialogType.noHeader,
+                          animType: AnimType.scale,
+                          showCloseIcon: true,
+                          title: item.title,
+                          body: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("${item.title} 아이템 정보",
+                                    style: TextStyle(
+                                      fontSize: 18.sp,
+                                    )),
+                                SizedBox(height: 3.h),
+                                Text("📝 설명",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
+                                SizedBox(height: 6),
+                                Text(item.description),
+                                SizedBox(height: 16),
+                                Text("📅 구매일",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
+                                SizedBox(height: 4),
+                                Text(ItemService(PocketB().pocketBase)
+                                    .formatDateTime(purchasedTime)),
+                                SizedBox(height: 12),
+                                Text("⏳ 만료일",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
+                                SizedBox(height: 4),
+                                Text(ItemService(PocketB().pocketBase)
+                                    .formatDateTime(dueDate)),
+                              ],
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(item.title,
-                                      style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white)),
-                                  const SizedBox(height: 4),
-                                  Text("남은 수량: $remain개",
-                                      style: TextStyle(
-                                        color: remain > 0
-                                            ? Colors.greenAccent
-                                            : Colors.red[200],
-                                      )),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                      "구매일: ${ItemService(PocketB().pocketBase).formatDateTime(purchasedTime)}",
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey)),
-                                  Text(
-                                      "만료일: ${ItemService(PocketB().pocketBase).formatDateTime(dueDate)}",
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey)),
-                                  if (shouldShowUseButton(item, raw))
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 8.0),
-                                        child: ElevatedButton(
-                                          onPressed: () => handleUseItem(item),
-                                          child: const Text("사용"),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                Colors.greenAccent.shade700,
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
+                          ),
+                          btnOkText: "확인",
+                          btnOkOnPress: () {},
+                        ).show();
+                      },
+                      child: Card(
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 3,
+                        color: const Color(0xFF2A241F),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              ClipOval(
+                                child: Container(
+                                  width: 50,
+                                  height: 50,
+                                  color: Colors.white,
+                                  child: item.image.isNotEmpty
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(6.0),
+                                          child: Image.network(
+                                            item.imageUrl,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (_, __, ___) =>
+                                                const Icon(Icons.broken_image),
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
+                                        )
+                                      : const Icon(Icons.image),
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(item.title,
+                                        style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white)),
+                                    const SizedBox(height: 4),
+                                    Text("남은 수량: $remain개",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: remain > 0
+                                              ? Colors.greenAccent
+                                              : Colors.red[200],
+                                        )),
+                                  ],
+                                ),
+                              ),
+                              if (shouldShowUseButton(item, raw))
+                                ElevatedButton(
+                                  onPressed: () => handleUseItem(item),
+                                  child: const Text("사용"),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Colors.greenAccent.shade700,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 8),
+                                    textStyle: const TextStyle(fontSize: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     );
