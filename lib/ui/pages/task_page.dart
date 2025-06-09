@@ -230,7 +230,7 @@ class _TaskPageState extends State<TaskPage> {
                                 task: task,
                                 category: _categories.where((e) {
                                   return e.id == task.categoryId;
-                                }).first,
+                                }).firstOrNull,
                                 onChanged: (_) => _handleToggleDone(task),
                                 onEdit: () => _openTaskForm(task: task),
                                 onDelete: () => _handleDelete(task),
