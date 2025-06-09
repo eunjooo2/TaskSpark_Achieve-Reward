@@ -174,7 +174,7 @@ class _InventoryPageState extends State<InventoryPage> {
                       onTap: () {
                         AwesomeDialog(
                           context: context,
-                          dialogType: DialogType.noHeader,
+                          dialogType: DialogType.infoReverse,
                           animType: AnimType.scale,
                           showCloseIcon: true,
                           title: item.title,

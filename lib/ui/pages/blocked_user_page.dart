@@ -109,7 +109,8 @@ class _BlockedUserPageState extends State<BlockedUserPage> {
                 : const AssetImage("assets/images/default_profile.png")
                     as ImageProvider,
           ),
-          title: Text("${user.nickname ?? '알 수 없음'}#${user.tag ?? '0000'}"),
+          title: Text(
+              "${user.nickname ?? '알 수 없음'}#${user.tag.toString().padRight(4, '0')}"),
           subtitle: Text("ID: ${user.id}"),
           trailing: IconButton(
             icon: const Icon(Icons.lock_open, color: Colors.red),

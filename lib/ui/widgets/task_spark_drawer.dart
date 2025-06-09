@@ -268,7 +268,7 @@ class _TaskSparkDrawerState extends State<TaskSparkDrawer> {
                         );
                       }),
                        */
-                      _getDrawerIconRow(FontAwesomeIcons.userLock, "차단 친구 관리",
+                      _getDrawerIconRow(FontAwesomeIcons.userSlash, "차단 친구 관리",
                           () {
                         Navigator.push(
                           context,
@@ -277,6 +277,11 @@ class _TaskSparkDrawerState extends State<TaskSparkDrawer> {
                           ),
                         );
                       }),
+                      _getDrawerIconRow(
+                          FontAwesomeIcons.userLock, "계정 관리", () {}),
+                      _getDrawerIconRow(
+                          FontAwesomeIcons.gears, "백업 및 동기화", () {}),
+                      _getDrawerIconRow(FontAwesomeIcons.info, "앱 정보", () {}),
                     ],
                   ),
                 ),

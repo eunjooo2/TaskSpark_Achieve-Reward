@@ -58,11 +58,18 @@ class AchievementTile extends StatelessWidget {
     } else {
       tierIndex = getTierIndex(achievement.amount, currentValue);
 
-      if (tierIndex >= 5 || tierIndex >= tierOrder.length - 1) {
+      if (tierIndex >= tierOrder.length) {
+        if (achievement.title == "멈추지 않는 걸음") {
+          print("detected");
+        }
         progress = 1.0;
       } else {
         progress = currentValue / (achievement.amount["diamond"] ?? 1.0);
       }
+    }
+
+    if (achievement.title == "멈추지 않는 걸음") {
+      print("progress: $progress");
     }
 
     final isHiddenUnlocked = achievement.isHidden && isUnlocked;

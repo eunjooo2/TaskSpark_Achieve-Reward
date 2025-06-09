@@ -1,3 +1,4 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
@@ -34,6 +35,7 @@ class _SocialPageState extends State<SocialPage>
   bool isMatched = false;
   RivalRequest? rivalInfo;
   User? enemy;
+  User? my;
   int dayDiff = 0;
   int nowDayDiff = 0;
 
@@ -54,9 +56,10 @@ class _SocialPageState extends State<SocialPage>
 
   @override
   void didPopNext() {
-    _fetchMatch();
-    getFriend();
-    getRival();
+    final currentTab = tabController.index;
+    if (currentTab == 0) {
+      getFriend();
+    }
   }
 
   Color? getCardColor(int index) {
@@ -67,6 +70,17 @@ class _SocialPageState extends State<SocialPage>
         return Colors.red[700];
       case RivalResult.draw:
         return Colors.grey[700];
+    }
+  }
+
+  String? getTitle(int index) {
+    switch (isWin[index]) {
+      case RivalResult.win:
+        return "승리";
+      case RivalResult.lose:
+        return "패배";
+      case RivalResult.draw:
+        return "무승부";
     }
   }
 
@@ -150,12 +164,14 @@ class _SocialPageState extends State<SocialPage>
       );
 
       final results = await Future.wait(resultFutures);
+      final myUser = await UserService().getProfile();
 
       if (!mounted) return;
 
       await RivalService().insertNDayMetaData();
 
       setState(() {
+        my = myUser;
         isMatched = true;
         enemy = enemyInfo;
         rivalInfo = rival;
@@ -321,11 +337,117 @@ class _SocialPageState extends State<SocialPage>
                                         child: SizedBox(
                                           width: 100.w,
                                           height: 10.h,
-                                          child: Center(
-                                            child: Text(
-                                              "${index + 1}일차 할 일 목록 및 결과",
-                                              style: TextStyle(
-                                                  color: Colors.white),
+                                          child: InkWell(
+                                            onTap: index + 1 > nowDayDiff
+                                                ? () {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          "아직 진행되지 않은 대결입니다.",
+                                                          style: TextStyle(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .secondary,
+                                                          ),
+                                                        ),
+                                                        backgroundColor:
+                                                            Theme.of(context)
+                                                                .colorScheme
+                                                                .primary,
+                                                      ),
+                                                    );
+                                                  }
+                                                : () async {
+                                                    final _dialogContext =
+                                                        context;
+                                                    if (!mounted) return;
+                                                    AwesomeDialog(
+                                                      context: _dialogContext,
+                                                      animType: AnimType.scale,
+                                                      dialogType:
+                                                          DialogType.noHeader,
+                                                      body: Column(
+                                                        children: [
+                                                          Text(
+                                                            "${index + 1}일차 정보",
+                                                            style: TextStyle(
+                                                              fontSize: 18.sp,
+                                                            ),
+                                                          ),
+                                                          SizedBox(height: 1.h),
+                                                          Text(
+                                                            getTitle(index) ??
+                                                                "",
+                                                            style: TextStyle(
+                                                              color:
+                                                                  getCardColor(
+                                                                      index),
+                                                              fontSize: 18.sp,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                          SizedBox(height: 3.h),
+                                                          Column(
+                                                            children: [
+                                                              Text(
+                                                                "${enemy!.nickname}#${enemy!.tag.toString().padRight(4, '0')}님의 정보",
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize:
+                                                                      16.sp,
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                  "목표: ${rivalInfo!.metadata["process"][index][enemy!.id]["goal"]}/완료: ${rivalInfo!.metadata["process"][index][enemy!.id]["done"]}")
+                                                            ],
+                                                          ),
+                                                          Padding(
+                                                            padding: EdgeInsets
+                                                                .symmetric(
+                                                                    vertical:
+                                                                        2.5.h),
+                                                            child: Divider(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .primary,
+                                                              indent: 5.w,
+                                                              endIndent: 5.w,
+                                                            ),
+                                                          ),
+                                                          Column(
+                                                            children: [
+                                                              Text(
+                                                                "${my!.nickname}#${my!.tag.toString().padRight(4, '0')}님의 정보",
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize:
+                                                                      16.sp,
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                  height: 1.h),
+                                                              Text(
+                                                                  "목표: ${rivalInfo!.metadata["process"][index][my!.id]["goal"]}/완료: ${rivalInfo!.metadata["process"][index][my!.id]["done"]}")
+                                                            ],
+                                                          ),
+                                                          SizedBox(height: 5.h),
+                                                        ],
+                                                      ),
+                                                      showCloseIcon: true,
+                                                    ).show();
+                                                  },
+                                            child: Center(
+                                              child: Text(
+                                                "${index + 1}일차 할 일 목록 및 결과",
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
                                             ),
                                           ),
                                         ),
