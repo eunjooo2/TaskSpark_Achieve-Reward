@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:task_spark/data/item.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:task_spark/data/friend.dart';
 
@@ -107,42 +108,41 @@ class UserService {
     }
   }
 
-  /// 🔹 [새로 추가됨] 인벤토리 아이템 사용 (itemId 기반)
-  Future<bool> useInventoryItemById(String itemId) async {
+  /// 기존 방식: 인벤토리에서 아이템 이름 기반 삭제
+  Future<bool> useItem(String userId, String itemName) async {
     try {
-      await _pb.collection("inventory").update(itemId, body: {
-        "used": true, // 또는 상태 변경 (예: 상태값 'used'로 바꾸기)
+      final userRecord = await _pb.collection("users").getOne(userId);
+      final inventoryData = userRecord.get("inventory");
+
+      if (inventoryData == null || inventoryData["items"] == null) {
+        throw Exception("인벤토리를 찾을 수 없습니다.");
+      }
+
+      List<dynamic> items = inventoryData["items"];
+
+      bool found = false;
+      for (var item in items) {
+        if (item["name"] == itemName && item["isUsed"] != true) {
+          item["isUsed"] = true;
+          item["usedTime"] = DateTime.now().toIso8601String();
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        throw Exception("해당 아이템을 찾을 수 없거나 이미 사용되었습니다.");
+      }
+
+      await _pb.collection("users").update(userId, body: {
+        "inventory": {"items": items}
       });
-      print("✅ 아이템 사용 완료 (ID: $itemId)");
+
+      print("✅ $itemName 아이템 사용 처리 완료");
       return true;
     } catch (e) {
       print("❌ 아이템 사용 실패: $e");
       return false;
-    }
-  }
-
-  /// 기존 방식: 인벤토리에서 아이템 이름 기반 삭제
-  Future<bool> useItem(String userId, String itemName) async {
-    try {
-      final record = await _pb.collection("users").getOne(userId);
-      final currentInventory = List<String>.from(record.get("inventory") ?? []);
-
-      if (!currentInventory.contains(itemName)) {
-        throw Exception("아이템이 인벤토리에 없습니다.");
-      }
-
-      currentInventory.remove(itemName);
-
-      await _pb.collection("users").update(userId, body: {
-        "inventory": currentInventory,
-      });
-
-      print("✅ $itemName 아이템 사용 완료");
-      return true;
-    } catch (e) {
-      print("❌ 아이템 사용 실패: $e");
-
-      rethrow;
     }
   }
 

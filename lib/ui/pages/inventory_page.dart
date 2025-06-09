@@ -12,6 +12,8 @@ class InventoryPage extends StatefulWidget {
   State<InventoryPage> createState() => _InventoryPageState();
 }
 
+// 생략된 import 및 class 선언은 기존과 동일
+
 class _InventoryPageState extends State<InventoryPage> {
   final itemService = ItemService(PocketB().pocketBase);
   final userService = UserService();
@@ -29,9 +31,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
   Future<void> fetchUser() async {
     final loadUser = await userService.getProfile();
-    setState(() {
-      user = loadUser;
-    });
+    setState(() => user = loadUser);
   }
 
   Future<void> fetchInventory() async {
@@ -43,7 +43,11 @@ class _InventoryPageState extends State<InventoryPage> {
     }
 
     rawData = rawItems.whereType<Map<String, dynamic>>().toList();
-    rawData = rawData.where((e) => e["isUsed"] == false).toList();
+    // 수량이 1개 이상 남아있는 아이템만 필터링
+    rawData = rawData
+        .where((e) => (e["quantity"] ?? 0) > (e["usedQuantity"] ?? 0))
+        .toList();
+
     final ids = rawData.map((e) => e["id"] as String).toList();
 
     try {
@@ -66,8 +70,10 @@ class _InventoryPageState extends State<InventoryPage> {
 
     final raw = getRawById(item.id);
     int quantity = raw["quantity"] ?? 0;
+    int used = raw["usedQuantity"] ?? 0;
+    int remain = quantity - used;
 
-    if (quantity <= 0) {
+    if (remain <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("아이템이 더 이상 없습니다.")),
       );
@@ -78,14 +84,15 @@ class _InventoryPageState extends State<InventoryPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("아이템 사용"),
-        content: Text("${item.title} 아이템을 사용하시겠습니까?\n(남은 수량: $quantity개)"),
+        content: Text("${item.title} 아이템을 사용하시겠습니까?\n(남은 수량: $remain개)"),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("취소"),
-          ),
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("취소")),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () async {
+              Navigator.pop(context, true);
+            },
             child: const Text("사용"),
           ),
         ],
@@ -94,32 +101,37 @@ class _InventoryPageState extends State<InventoryPage> {
 
     if (confirm != true) return;
 
-    setState(() {
-      quantity -= 1;
-      raw["quantity"] = quantity;
-      raw["isUsed"] = quantity == 0;
-    });
+    // logs 중 사용되지 않은 로그를 하나 찾아서 업데이트
+    final logs = raw["logs"] as List<dynamic>? ?? [];
+    final now = DateTime.now().toIso8601String();
+
+    for (final log in logs) {
+      if (log is Map && (log["isUsed"] == false || log["isUsed"] == null)) {
+        log["isUsed"] = true;
+        log["usedTime"] = now;
+        raw["usedQuantity"] = used + 1;
+        break;
+      }
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("${item.title} 아이템을 1개 사용했습니다.")),
     );
 
-    // ✅ PocketBase에 업데이트
     try {
       final updatedUser = await userService.updateInventory(user!.id!, rawData);
       debugPrint("인벤토리 업데이트 성공: ${updatedUser.id}");
     } catch (e) {
       debugPrint("인벤토리 업데이트 실패: $e");
     }
+
+    // UI 갱신
+    setState(() {});
   }
 
   bool shouldShowUseButton(Item item, Map<String, dynamic> raw) {
-    final quantity = raw["quantity"] ?? 0;
-    final isUsed = raw["isUsed"] ?? false;
-    return item.title != "x1.2경험치 부스트" &&
-        item.title != "라이벌 신청권" &&
-        !isUsed &&
-        quantity > 0;
+    final remain = (raw["quantity"] ?? 0) - (raw["usedQuantity"] ?? 0);
+    return item.title != "x1.2경험치 부스트" && item.title != "라이벌 신청권" && remain > 0;
   }
 
   @override
@@ -144,10 +156,13 @@ class _InventoryPageState extends State<InventoryPage> {
                     final item = items[index];
                     final raw = getRawById(item.id);
                     final quantity = raw["quantity"] ?? 0;
-                    final isUsed = raw["isUsed"] ?? false;
-                    final metadata = raw["metadata"] ?? {};
-                    final purchasedTime = metadata["purchasedTime"] ?? "알 수 없음";
-                    final dueDate = metadata["dueDate"] ?? "없음";
+                    final used = raw["usedQuantity"] ?? 0;
+                    final remain = quantity - used;
+                    final logs = raw["logs"] as List<dynamic>? ?? [];
+                    final lastLog = logs.isNotEmpty ? logs.last : null;
+
+                    final purchasedTime = lastLog?["purchasedTime"] ?? "알 수 없음";
+                    final dueDate = lastLog?["dueDate"] ?? "없음";
 
                     return Card(
                       margin: const EdgeInsets.symmetric(
@@ -194,31 +209,25 @@ class _InventoryPageState extends State<InventoryPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    item.title,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                                  Text(item.title,
+                                      style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white)),
                                   const SizedBox(height: 4),
-                                  Text("보유 수량: $quantity개",
-                                      style:
-                                          TextStyle(color: Colors.grey[400])),
-                                  Text(
-                                    "사용 여부: ${isUsed ? "사용됨" : "미사용"}",
-                                    style: TextStyle(
-                                      color: isUsed
-                                          ? Colors.red[200]
-                                          : Colors.greenAccent,
-                                    ),
-                                  ),
+                                  Text("남은 수량: $remain개",
+                                      style: TextStyle(
+                                        color: remain > 0
+                                            ? Colors.greenAccent
+                                            : Colors.red[200],
+                                      )),
                                   const SizedBox(height: 4),
-                                  Text("구매일: $purchasedTime",
+                                  Text(
+                                      "구매일: ${ItemService(PocketB().pocketBase).formatDateTime(purchasedTime)}",
                                       style: const TextStyle(
                                           fontSize: 12, color: Colors.grey)),
-                                  Text("만료일: $dueDate",
+                                  Text(
+                                      "만료일: ${ItemService(PocketB().pocketBase).formatDateTime(dueDate)}",
                                       style: const TextStyle(
                                           fontSize: 12, color: Colors.grey)),
                                   if (shouldShowUseButton(item, raw))

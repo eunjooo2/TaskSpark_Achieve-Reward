@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../data/item.dart';
 
@@ -35,6 +36,16 @@ class ItemService {
     } catch (e) {
       print('여러 아이템 조회 실패: $e');
       return [];
+    }
+  }
+
+  String formatDateTime(String isoString) {
+    try {
+      final dateTime = DateTime.parse(isoString).toLocal(); // 로컬 시간 변환
+      final formatter = DateFormat('yyyy년 M월 d일 H시 m분 s초');
+      return formatter.format(dateTime);
+    } catch (e) {
+      return "알 수 없음";
     }
   }
 }

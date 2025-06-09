@@ -151,6 +151,8 @@ class _SocialPageState extends State<SocialPage>
 
       if (!mounted) return;
 
+      await RivalService().insertNDayMetaData();
+
       setState(() {
         isMatched = true;
         enemy = enemyInfo;

@@ -4,6 +4,7 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:task_spark/ui/pages/achievement_page.dart';
 import 'package:task_spark/data/user.dart';
 import 'package:task_spark/ui/pages/edit_profile_page.dart';
+import 'package:task_spark/ui/pages/item_used_page.dart';
 import 'package:task_spark/util/secure_storage.dart';
 import 'package:task_spark/service/user_service.dart';
 
@@ -228,6 +229,15 @@ class _TaskSparkDrawerState extends State<TaskSparkDrawer> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => InventoryPage(),
+                          ),
+                        );
+                      }),
+                      _getDrawerIconRow(FontAwesomeIcons.receipt, "아이템 사용내역",
+                          () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ItemUsedPage(),
                           ),
                         );
                       }),

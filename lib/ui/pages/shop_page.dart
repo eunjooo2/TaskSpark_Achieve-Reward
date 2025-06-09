@@ -284,12 +284,15 @@ class _ShopPageState extends State<ShopPage> {
     final itemsList = List<Map<String, dynamic>>.from(inventory["items"] ?? []);
 
     final now = DateTime.now().toUtc();
+    final dueDate = DateTime(now.year, now.month + 1, now.day).toUtc();
 
     // ✅ 방어권 2개 제한 로직
     if (item.title == "방어권") {
       int defenseItemCount = itemsList
-          .where((inv) => inv["id"] == item.id && inv["isUsed"] == false)
-          .fold(0, (sum, inv) => (inv["quantity"] ?? 0) + sum);
+          .where((e) => e["id"] == item.id)
+          .expand((e) => (e["logs"] ?? []) as List)
+          .where((log) => log["isUsed"] == false)
+          .length;
 
       if (defenseItemCount >= 2) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -299,26 +302,37 @@ class _ShopPageState extends State<ShopPage> {
       }
     }
 
-    bool found = false;
-    for (var inv in itemsList) {
-      if (inv["id"] == item.id && inv["isUsed"] == false) {
-        inv["quantity"] = (inv["quantity"] ?? 1) + 1;
-        found = true;
+    Map<String, dynamic>? entry;
+    for (var e in itemsList) {
+      if (e["id"] == item.id) {
+        entry = e;
         break;
       }
     }
 
-    if (!found) {
-      itemsList.add({
+    if (entry != null) {
+      final logs = List<Map<String, dynamic>>.from(entry["logs"] ?? []);
+      logs.add({
+        "purchasedTime": now.toIso8601String(),
+        "dueDate": dueDate.toIso8601String(),
+        "expired": false,
         "isUsed": false,
+      });
+      entry["logs"] = logs;
+      entry["quantity"] = (entry["quantity"] ?? 0) + 1;
+    } else {
+      itemsList.add({
         "id": item.id,
+        "logs": [
+          {
+            "purchasedTime": now.toIso8601String(),
+            "dueDate": dueDate.toIso8601String(),
+            "expired": false,
+            "isUsed": false,
+          }
+        ],
         "quantity": 1,
-        "metadata": {
-          "purchasedTime": now.toIso8601String(),
-          "dueDate":
-              DateTime(now.year, now.month + 1, now.day).toIso8601String(),
-          "expired": false,
-        }
+        "usedQuantity": 0,
       });
     }
 
