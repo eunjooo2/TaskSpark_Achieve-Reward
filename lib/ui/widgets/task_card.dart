@@ -70,15 +70,27 @@ class _TaskCardState extends State<TaskCard> {
           value: widget.task.isDone ?? false,
           onChanged: isFutureTask ? null : (val) => widget.onChanged(val),
         ),
-        title: Text(
-          widget.task.title ?? '',
-          style: TextStyle(
-            fontSize: 17.sp,
-            decoration: (widget.task.isDone ?? false)
-                ? TextDecoration.lineThrough
-                : null,
-            color: textColor,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.task.title ?? '',
+              style: TextStyle(
+                fontSize: 18.sp,
+                decoration: (widget.task.isDone ?? false)
+                    ? TextDecoration.lineThrough
+                    : null,
+                color: textColor,
+              ),
+            ),
+            if (widget.task.description != null)
+              Text(
+                "${widget.task.description}",
+                style: TextStyle(
+                  fontSize: 15.sp,
+                ),
+              ),
+          ],
         ),
         subtitle: Text(
           '시작: $start\n종료: $end',
