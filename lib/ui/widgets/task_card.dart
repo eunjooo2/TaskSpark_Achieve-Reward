@@ -26,7 +26,7 @@ class TaskCard extends StatefulWidget {
   final ValueChanged<bool?> onChanged;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  final Category category;
+  final Category? category;
 
   const TaskCard({
     super.key,
@@ -63,7 +63,7 @@ class _TaskCardState extends State<TaskCard> {
           borderRadius: const BorderRadius.all(Radius.circular(10)),
           side: BorderSide(
               width: 2.0,
-              color: HexColor.fromHex(widget.category.color ?? "#CCBBAA"))),
+              color: HexColor.fromHex(widget.category?.color ?? "#CCBBAA"))),
       margin: EdgeInsets.symmetric(vertical: 1.h, horizontal: 3.w),
       child: ListTile(
         leading: Checkbox(
