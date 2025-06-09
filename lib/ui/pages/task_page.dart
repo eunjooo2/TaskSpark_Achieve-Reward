@@ -98,7 +98,9 @@ class _TaskPageState extends State<TaskPage> {
 
   void _showSnackBar(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        content: Text(msg)));
   }
 
   Future<void> _handleToggleDone(Task task) async {
@@ -226,6 +228,9 @@ class _TaskPageState extends State<TaskPage> {
                               final task = _filteredTasks[idx];
                               return TaskCard(
                                 task: task,
+                                category: _categories.where((e) {
+                                  return e.id == task.categoryId;
+                                }).first,
                                 onChanged: (_) => _handleToggleDone(task),
                                 onEdit: () => _openTaskForm(task: task),
                                 onDelete: () => _handleDelete(task),

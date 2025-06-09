@@ -1,12 +1,41 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:task_spark/service/rival_service.dart';
 import 'package:task_spark/ui/pages/splash_page.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
-void main() {
+
+void onStart(ServiceInstance service) {
+  DateTime? lastRun;
+
+  Timer.periodic(Duration(minutes: 1), (timer) async {
+    final now = DateTime.now();
+
+    if (now.hour == 0 && now.minute == 0) {
+      if (lastRun?.day != now.day) {
+        lastRun = now;
+
+        await RivalService().insertNDayMetaData(); // 💥 여기에 너 만든 함수 그대로 호출
+      }
+    }
+  });
+}
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const TaskSparkApp());
+  await FlutterBackgroundService().configure(
+    androidConfiguration: AndroidConfiguration(
+      onStart: onStart,
+      isForegroundMode: false,
+    ),
+    iosConfiguration: IosConfiguration(),
+  );
+  await FlutterBackgroundService().startService();
+  runApp(TaskSparkApp());
 }
 
 class TaskSparkApp extends StatefulWidget {
@@ -42,7 +71,7 @@ class _TaskSparkAppState extends State<TaskSparkApp> with RouteAware {
   }
 
   void refreshDataIfNeeded() {
-    print("뒤에서 돌아왔음! 상태 갱신할게요");
+    print("상태 갱신할게요");
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:task_spark/service/achievement_service.dart';
 
 class User {
   String? collectionId;
@@ -19,6 +20,7 @@ class User {
   String? nickname;
   int? tag;
   Map<String, dynamic>? metadata;
+  int? expMultiplier; // 부스터
 
   User({
     this.collectionId,
@@ -33,6 +35,7 @@ class User {
     this.point,
     this.avatar,
     this.exp,
+    this.expMultiplier,
     this.inventory,
     this.created,
     this.updated,
@@ -54,6 +57,7 @@ class User {
       "avatar": avatar,
       "exp": exp,
       "point": point,
+      "expMultiplier": expMultiplier,
       "inventory": inventory,
       "created": created?.toIso8601String(),
       "updated": updated?.toIso8601String(),
@@ -74,6 +78,7 @@ class User {
       avatar: record.data["avatar"] as String?,
       exp: record.data["exp"] as num?,
       point: record.data["point"] ?? record.data["point"] ?? 0,
+      expMultiplier: record.data["expMultiplier"] as int?,
       inventory: record.data["inventory"] as Map<String, dynamic>?,
       created: DateTime.tryParse(record.created),
       updated: DateTime.tryParse(record.updated),
@@ -94,6 +99,7 @@ class User {
       tag: user["tag"] as int?,
       exp: user["exp"] as num?,
       point: user["point"] ?? user["point"] ?? 0,
+      expMultiplier: user["expMultiplier"] as int?,
       inventory: user["inventory"] as Map<String, dynamic>?,
       created: DateTime.tryParse(user["created"]),
       updated: DateTime.tryParse(user["updated"]),
@@ -110,6 +116,44 @@ class User {
       return "https://example.com/default-profile.png"; // 대체 이미지 경로
     }
     return "https://pb.aroxu.me/api/files/$collectionId/$id/$avatar";
+  }
+
+  /// # 경험치 기반으로 metadata 갱신
+  void updateExpAndLevel() {
+    final currentExp = (exp ?? 0).toInt();
+    final previousLevel = metadata?['level'] ?? 1;
+    final newLevel = _convertExpToLevel(currentExp);
+
+    metadata ??= {};
+    metadata!['exp'] = currentExp;
+    metadata!['level'] = newLevel;
+
+    if (newLevel > previousLevel) {
+      // 레벨이 올랐다면 업적 증가 처리!
+      AchievementService().increaseAchievement("level_up");
+      print("[업적] level_up +1");
+    }
+  }
+
+  /// 경험치 → 레벨 계산 공식
+  int _convertExpToLevel(int exp) {
+    int low = 0;
+    int high = 1000;
+
+    while (low <= high) {
+      int mid = (low + high) ~/ 2;
+      int requiredExp = 50 * mid * mid + 100 * mid;
+
+      if (requiredExp == exp) {
+        return mid;
+      } else if (requiredExp < exp) {
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    return high;
   }
 }
 

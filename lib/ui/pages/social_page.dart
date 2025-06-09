@@ -97,8 +97,10 @@ class _SocialPageState extends State<SocialPage>
   }
 
   Future<void> getRival() async {
-    final sentRivalRequests = await RivalService().loadSendRivalRequest();
-    final receiveRivalRequests = await RivalService().loadReceiveRivalRequest();
+    final sentRivalRequests =
+        await RivalService().loadRivalRequests(sent: true);
+    final receiveRivalRequests =
+        await RivalService().loadRivalRequests(sent: false);
 
     if (!mounted) return;
 

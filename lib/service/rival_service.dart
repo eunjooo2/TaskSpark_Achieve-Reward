@@ -6,12 +6,13 @@ import 'package:task_spark/util/pocket_base.dart';
 import 'package:task_spark/util/secure_storage.dart';
 import 'package:task_spark/service/friend_service.dart';
 import 'package:task_spark/data/rival.dart';
+import 'package:task_spark/service/achievement_service.dart';
 
 class RivalService {
   Future<RivalRequest> sendRivalRequest(
       DateTime start, DateTime end, FriendRequest friend) async {
     String userID = await SecureStorage().storage.read(key: "userID") ?? "";
-    final body = <String, dynamic>{
+    final body = {
       "start": start.toIso8601String(),
       "end": end.toIso8601String(),
       "friend": friend.id,
@@ -28,7 +29,6 @@ class RivalService {
     final result = await PocketB().pocketBase.collection("rivals").getFullList(
         filter:
             'friend.id="${friend.id}"&&sender.id="$userID"&&isAccepted=false');
-
     return result.length == 1;
   }
 
@@ -37,88 +37,92 @@ class RivalService {
     final result = await PocketB().pocketBase.collection("rivals").getFullList(
         filter:
             'friend.id="${friend.id}"&&sender.id!="$userID"&&isAccepted=false');
-
     return result.length == 1;
   }
 
-  Future<List<RivalRequest>> loadSendRivalRequest() async {
+  Future<List<RivalRequest>> loadRivalRequests({required bool sent}) async {
     String userID = await SecureStorage().storage.read(key: "userID") ?? "";
+    final filter = sent
+        ? "sender.id='$userID'&&isAccepted=false"
+        : "(friend.receiver.id='$userID'||friend.sender.id='$userID')&&sender.id!='$userID'&&isAccepted=false";
+
     final result = await PocketB()
         .pocketBase
         .collection("rivals")
-        .getFullList(filter: "sender.id='$userID'&&isAccepted=false");
+        .getFullList(filter: filter);
+    return result.map((json) => RivalRequest.fromRecord(json)).toList();
+  }
 
-    final rivalRequests =
-        result.map((json) => RivalRequest.fromRecord(json)).toList();
-
-    return rivalRequests;
+  Future<List<RivalRequest>> loadSendRivalRequest() async {
+    return await loadRivalRequests(sent: true);
   }
 
   Future<List<RivalRequest>> loadReceiveRivalRequest() async {
-    String userID = await SecureStorage().storage.read(key: "userID") ?? "";
-    final result = await PocketB().pocketBase.collection("rivals").getFullList(
-        filter:
-            "(friend.receiver.id='$userID'||friend.sender.id='$userID')&&sender.id!='$userID'&&isAccepted=false");
-
-    final rivalRequests =
-        result.map((json) => RivalRequest.fromRecord(json)).toList();
-
-    return rivalRequests;
+    return await loadRivalRequests(sent: false);
   }
 
   Future<bool> isMatchedRival() async {
     String userID = await SecureStorage().storage.read(key: "userID") ?? "";
     List<FriendRequest> friends = await FriendService().getFriendList();
-
     final friendIds = friends.map((f) => f.id).toList();
-
     final filter = friendIds.map((id) => 'friend.id="$id"').join('||');
-
-    final result = await PocketB().pocketBase.collection('rivals').getFullList(
-          filter: "($filter||sender.id='$userID')&&isAccepted=true",
-        );
-
+    final result = await PocketB()
+        .pocketBase
+        .collection('rivals')
+        .getFullList(filter: "($filter||sender.id='$userID')&&isAccepted=true");
     return result.length == 1;
   }
 
   Future<RivalRequest> loadMatchedRivalInfo() async {
     String userID = await SecureStorage().storage.read(key: "userID") ?? "";
     List<FriendRequest> friends = await FriendService().getFriendList();
-
     final friendIds = friends.map((f) => f.id).toList();
-
     final filter = friendIds.map((id) => 'friend.id="$id"').join('||');
-
-    final result = await PocketB().pocketBase.collection('rivals').getFullList(
-          filter: "($filter||sender.id='$userID')&&isAccepted=true",
-        );
-
+    final result = await PocketB()
+        .pocketBase
+        .collection('rivals')
+        .getFullList(filter: "($filter||sender.id='$userID')&&isAccepted=true");
     return RivalRequest.fromRecord(result[0]);
   }
 
   Future<User> loadEnemyUser() async {
-    final rival = await RivalService().loadMatchedRivalInfo();
+    final rival = await loadMatchedRivalInfo();
     final friendRequestInfo =
         await FriendService().getFriendByRecordID(rival.friendID);
     final enemyUserID = await UserService().getOtherUserID(friendRequestInfo);
     final userInfo = await UserService().getUserByID(enemyUserID);
-
     return userInfo;
   }
 
   Future<void> acceptRivalRequest(String recordID) async {
-    await PocketB()
+    final record = await PocketB()
         .pocketBase
         .collection("rivals")
         .update(recordID, body: {"isAccepted": true});
-
+    final String userID = (await SecureStorage().storage.read(key: "userID"))!;
+    final String? senderID = record.get("sender")?["id"];
+    final String? friendID = record.get("friend")?["id"];
+    if (userID == senderID || userID == friendID) {
+      await AchievementService().updateMetaDataWithKey("rival_challenge", 1);
+      print("[업적] rival_challenge +1");
+    }
     await _deleteRivalRequest();
+  }
+
+  Future<void> checkRivalVictory(RivalRequest request) async {
+    final userID = await SecureStorage().storage.read(key: "userID") ?? "";
+    if (request.metadata["result"] != null) {
+      if (request.metadata["result"]["winner"] == userID) {
+        await AchievementService().updateMetaDataWithKey("rival_win", 1);
+        print("[업적] rival_win +1");
+      }
+    }
   }
 
   Future<void> _deleteRivalRequest() async {
     final records = await loadSendRivalRequest();
-    for (int i = 0; i < records.length; i++) {
-      await PocketB().pocketBase.collection("rivals").delete(records[i].id);
+    for (var record in records) {
+      await PocketB().pocketBase.collection("rivals").delete(record.id);
     }
   }
 
@@ -129,7 +133,6 @@ class RivalService {
   Future<List<Map<String, dynamic>>> getMetaData() async {
     final response = await loadMatchedRivalInfo();
     final process = response.metadata["process"];
-
     if (process is List) {
       return process.map((e) => Map<String, dynamic>.from(e)).toList();
     } else {
@@ -137,10 +140,8 @@ class RivalService {
     }
   }
 
-  // metadata에서 nDay의 idnex에 해당하는 value를 return ({"user1": {"goal": 13, "done": 11}, "user2": {"goal": 14, "done": 11}})
   Future<Map<String, dynamic>> getMetaDataWithNDays(int nDay) async {
     final metadata = await getMetaData();
-
     return metadata[nDay - 1];
   }
 
@@ -149,12 +150,13 @@ class RivalService {
     final rivalInfo = await loadMatchedRivalInfo();
     final metadata = await getMetaData();
     final enemy = await loadEnemyUser();
-    final _taskService = TaskService(PocketB().pocketBase, UserService());
+    final taskService = TaskService(PocketB().pocketBase, UserService());
 
-    final enemyGoal = await _taskService.getTaskGoalCount(enemy.id ?? "");
-    final enemyDone = await _taskService.getTaskDoneCount(enemy.id ?? "");
-    final myGoal = await _taskService.getTaskGoalCount(userID ?? "");
-    final myDone = await _taskService.getTaskDoneCount(userID ?? "");
+    final enemyGoal = await taskService.getTaskGoalCount(enemy.id ?? "");
+    final enemyDone = await taskService.getTaskDoneCount(enemy.id ?? "");
+    final myGoal = await taskService.getTaskGoalCount(userID ?? "");
+    final myDone = await taskService.getTaskDoneCount(userID ?? "");
+
     metadata.add({
       "${enemy.id}": {"goal": enemyGoal, "done": enemyDone},
       "$userID": {"goal": myGoal, "done": myDone}
@@ -170,10 +172,10 @@ class RivalService {
     final myInfo = await UserService().getProfile();
     final enemyInfo = await loadEnemyUser();
 
-    final myGoal = (response[myInfo.id]["goal"] ?? 0);
-    final myDone = (response[myInfo.id]["done"] ?? 0);
-    final enemyGoal = (response[enemyInfo.id]["goal"] ?? 0);
-    final enemyDone = (response[enemyInfo.id]["done"] ?? 0);
+    final myGoal = response[myInfo.id]["goal"] ?? 0;
+    final myDone = response[myInfo.id]["done"] ?? 0;
+    final enemyGoal = response[enemyInfo.id]["goal"] ?? 0;
+    final enemyDone = response[enemyInfo.id]["done"] ?? 0;
 
     final myRatio = myGoal == 0 ? 0 : myDone / myGoal;
     final enemyRatio = enemyGoal == 0 ? 0 : enemyDone / enemyGoal;

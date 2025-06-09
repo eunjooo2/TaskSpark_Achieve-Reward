@@ -4,6 +4,7 @@ import 'package:task_spark/data/user.dart';
 import 'package:task_spark/service/user_service.dart';
 import 'package:task_spark/util/pocket_base.dart';
 import 'package:task_spark/service/item_service.dart';
+import 'package:task_spark/service/achievement_service.dart';
 
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
@@ -258,9 +259,15 @@ class _ShopPageState extends State<ShopPage> {
                   ? () async {
                       final updated = await _processPurchase(item.price, item);
                       if (updated) {
+                        // # [업적 연동] 아이템 구매 업적 증가
+                        await AchievementService()
+                            .updateMetaDataWithKey("buy_item", 1);
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("${item.title} 구매 완료!")),
+                          SnackBar(
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              content: Text("${item.title} 구매 완료!")),
                         );
                       }
                     }
@@ -296,7 +303,9 @@ class _ShopPageState extends State<ShopPage> {
 
       if (defenseItemCount >= 2) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("방어권은 2개 이상 구매할 수 없습니다.")),
+          SnackBar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              content: Text("방어권은 2개 이상 구매할 수 없습니다.")),
         );
         return false;
       }

@@ -8,6 +8,7 @@ import 'package:task_spark/data/user.dart';
 import 'package:task_spark/util/secure_storage.dart';
 import 'package:task_spark/service/user_service.dart';
 import 'package:task_spark/service/friend_service.dart';
+import 'package:task_spark/service/achievement_service.dart';
 
 class FriendSearchPage extends StatefulWidget {
   const FriendSearchPage({super.key});
@@ -204,6 +205,10 @@ class _FriendSearchPageState extends State<FriendSearchPage> with RouteAware {
                                                   await FriendService()
                                                       .sendFriendRequest(
                                                           user.id ?? "");
+                                                  await AchievementService()
+                                                      .updateMetaDataWithKey(
+                                                          "add_friend", 1);
+                                                  //  ㄴ # 업적 추가
                                                   setState(() {
                                                     requestStatus[id] = true;
                                                   });
@@ -284,7 +289,10 @@ class _FriendSearchPageState extends State<FriendSearchPage> with RouteAware {
                                       btnCancelOnPress: () async {
                                         await FriendService()
                                             .blockFriend(user.id ?? "");
-
+                                        await AchievementService()
+                                            .updateMetaDataWithKey(
+                                                "block_friend", 1);
+                                        // # 차단 업적 추가
                                         await searchUser(
                                             _searchController.text);
                                       },

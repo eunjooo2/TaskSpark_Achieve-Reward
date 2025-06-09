@@ -56,6 +56,7 @@ class CategoryTabBar extends StatelessWidget implements PreferredSizeWidget {
               _buildChip(
                 context: context,
                 label: "전체",
+                borderColor: "#CCBBAA",
                 selected: selectedCategoryId == null,
                 onSelected: () => onCategorySelected(null),
               ),
@@ -67,6 +68,7 @@ class CategoryTabBar extends StatelessWidget implements PreferredSizeWidget {
                       child: _buildChip(
                         context: context,
                         label: "${c.emoji ?? ''} ${c.name}",
+                        borderColor: c.color,
                         selected: selectedCategoryId == c.id,
                         onSelected: () => onCategorySelected(c.id),
                       ),
@@ -91,13 +93,30 @@ class CategoryTabBar extends StatelessWidget implements PreferredSizeWidget {
     required String label,
     required bool selected,
     required VoidCallback onSelected,
+    String? borderColor,
   }) {
+    // #RRGGBB 형식의 문자열을 Color 로 변환
+    Color parseHexColor(String hex) {
+      // "FF" 알파값을 붙여서 0xFFRRGGBB 로
+      return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+    }
+
+    // 유효한 hex 문자열일 때만 파싱, 아니면 투명 처리
+    final Color borderClr = (borderColor != null &&
+            RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(borderColor))
+        ? parseHexColor(borderColor)
+        : Colors.transparent;
+
     return ChoiceChip(
       label: Text(label),
       selected: selected,
       onSelected: (_) => onSelected(),
       selectedColor: Colors.white,
       backgroundColor: Colors.grey[300],
+      // 여기에 border 적용
+      shape: StadiumBorder(
+        side: BorderSide(color: borderClr, width: 2),
+      ),
       labelStyle: TextStyle(
         color:
             selected ? Theme.of(context).colorScheme.primary : Colors.black87,

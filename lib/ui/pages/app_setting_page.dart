@@ -7,7 +7,18 @@ class AppSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("앱 설정")),
+      appBar: AppBar(
+        title: Text(
+          "앱 설정",
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.secondary,
+          ),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        leading: BackButton(
+          color: Theme.of(context).colorScheme.secondary,
+        ),
+      ),
       body: const Center(
         child: Text("앱 설정 기능은 준비 중입니다."),
       ),

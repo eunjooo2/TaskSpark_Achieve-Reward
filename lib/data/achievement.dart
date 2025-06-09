@@ -1,3 +1,6 @@
+// achievement.dart
+// 업적 데이터 모델 클래스. PocketBase record를 JSON으로 변환하거나, JSON을 객체로 생성하는 기능 포함.
+
 import 'package:pocketbase/pocketbase.dart';
 
 class Achievement {
@@ -7,6 +10,7 @@ class Achievement {
   final String type;
   final bool isOnce;
   final bool isHidden;
+  final String? hint;
   final Map<String, int> amount;
   final Map<String, dynamic>? reward;
 
@@ -19,6 +23,7 @@ class Achievement {
     required this.isOnce,
     this.isHidden = false,
     this.reward,
+    this.hint,
   });
 
   factory Achievement.fromJson(Map<String, dynamic> json) {
@@ -31,6 +36,7 @@ class Achievement {
       isHidden: json['isHidden'] ?? false,
       amount: Map<String, int>.from(json['amount'] ?? {}),
       reward: json['reward'],
+      hint: json['hint'] ?? '', // null 막기
     );
   }
 
@@ -56,6 +62,7 @@ class Achievement {
       reward: record.data["reward"] as Map<String, dynamic>,
       isOnce: record.data["isOnce"],
       isHidden: record.data["isHidden"],
+      hint: record.data["hint"] ?? '',
     );
   }
 }

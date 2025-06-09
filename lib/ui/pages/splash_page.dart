@@ -96,6 +96,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                                 buttonType: "google",
                                 title: "Google 로그인",
                                 onPressed: () async {
+                                  final userService = UserService(); // #
                                   final authData = await UserService()
                                       .sendLoginRequest("google");
                                   if (authData.token != "") {
@@ -113,6 +114,17 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                                     await SecureStorage().storage.write(
                                         key: "accessToken",
                                         value: authData.token);
+                                    // # 로그인 스트릭 처리
+                                    final user = await userService.getProfile();
+                                    await userService.updateLoginStreak(user);
+
+                                    // # 마지막에 MainPage로 이동!
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const MainPage(),
+                                      ),
+                                    );
                                   } else {
                                     print(authData);
                                   }
@@ -123,6 +135,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                                 buttonType: "kakao",
                                 title: "Kakao 로그인",
                                 onPressed: () async {
+                                  final userService = UserService(); // #
                                   final authData = await UserService()
                                       .sendLoginRequest("kakao");
                                   if (authData.token != "") {
@@ -140,6 +153,17 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                                     await SecureStorage().storage.write(
                                         key: "accessToken",
                                         value: authData.token);
+                                    // # login_streak 업적 반영
+                                    final user = await userService.getProfile();
+                                    await userService.updateLoginStreak(user);
+
+                                    // # 메인 페이지로 이동
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const MainPage(),
+                                      ),
+                                    );
                                   } else {
                                     // 로그인 실패 다이얼로그 처리
                                   }

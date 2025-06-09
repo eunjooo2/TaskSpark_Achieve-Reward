@@ -35,6 +35,7 @@ class _TaskFormState extends State<TaskForm> {
     super.initState();
     final t = widget.task;
     if (t != null) {
+      // --- 기존 task 수정 시 로직 ---
       _titleCtrl.text = t.title ?? '';
       _descCtrl.text = t.description ?? '';
       _startDate = t.startDate;
@@ -49,8 +50,13 @@ class _TaskFormState extends State<TaskForm> {
             : Category(name: '기본'),
       );
     } else {
+      // --- 새 할 일 생성 시 기본값 지정 ---
       _chosenCategory =
           widget.categories.isNotEmpty ? widget.categories.first : null;
+
+      // ★ 여기서 기본 start/end 값을 미리 세팅
+      _startDate = DateTime.now().add(const Duration(hours: 9));
+      _endDate = DateTime.now().add(const Duration(days: 1, hours: 9));
     }
   }
 
@@ -95,15 +101,17 @@ class _TaskFormState extends State<TaskForm> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        content: Text(msg)));
   }
 
   Future<void> _pickDateTime({required bool isStart}) async {
-    final initialDate =
-        isStart ? _startDate ?? DateTime.now() : _endDate ?? DateTime.now();
+    // 이미 initState에서 null이 없도록 보장했으므로 ! 사용
+    final base = isStart ? _startDate! : _endDate!;
     final date = await showDatePicker(
       context: context,
-      initialDate: initialDate,
+      initialDate: base,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -111,17 +119,21 @@ class _TaskFormState extends State<TaskForm> {
 
     final time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(initialDate),
+      initialTime: TimeOfDay.fromDateTime(base),
     );
     if (time == null) return;
 
-    final selectedDateTime =
-        DateTime(date.year, date.month, date.day, time.hour, time.minute);
     setState(() {
+      final selected =
+          DateTime(date.year, date.month, date.day, time.hour, time.minute);
       if (isStart) {
-        _startDate = selectedDateTime;
+        _startDate = selected;
+        // 시작일이 변경됐을 때, 종료일이 그보다 이전이라면 종료일도 맞춰줄 수도 있겠죠
+        if (_endDate!.isBefore(_startDate!)) {
+          _endDate = _startDate!.add(Duration(days: 1));
+        }
       } else {
-        _endDate = selectedDateTime;
+        _endDate = selected;
       }
     });
   }

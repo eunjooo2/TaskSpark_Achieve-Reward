@@ -54,12 +54,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("프로필이 성공적으로 업데이트되었습니다.")),
+          SnackBar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              content: Text("프로필이 성공적으로 업데이트되었습니다.")),
         );
         Navigator.pop(context);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("업데이트 실패: $e")),
+          SnackBar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              content: Text("업데이트 실패: $e")),
         );
       }
     }

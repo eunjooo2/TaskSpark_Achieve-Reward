@@ -3,10 +3,26 @@ import 'package:pocketbase/pocketbase.dart';
 
 enum RivalResult { win, draw, lose }
 
+class RivalDayResult {
+  final RivalResult result;
+  final double myRatio;
+  final double enemyRatio;
+  final int myDone;
+  final int enemyDone;
+
+  RivalDayResult(
+      {required this.result,
+      required this.myRatio,
+      required this.enemyRatio,
+      required this.myDone,
+      required this.enemyDone});
+}
+
 class RivalRequest {
   String id;
   DateTime start;
   DateTime end;
+
   String friendID;
   bool isAccepted;
   String senderID;

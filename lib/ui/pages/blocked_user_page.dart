@@ -72,7 +72,8 @@ class _BlockedUserPageState extends State<BlockedUserPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
+          backgroundColor: Theme.of(context).colorScheme.primary,
           content: Text("차단 해제 완료"),
           duration: Duration(seconds: 2),
         ),
@@ -124,7 +125,18 @@ class _BlockedUserPageState extends State<BlockedUserPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("차단 친구 설정")),
+      appBar: AppBar(
+        title: Text(
+          "차단 친구 설정",
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.secondary,
+          ),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        leading: BackButton(
+          color: Theme.of(context).colorScheme.secondary,
+        ),
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : blockedList.isEmpty

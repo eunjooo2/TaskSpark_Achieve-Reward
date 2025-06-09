@@ -1,6 +1,7 @@
 import 'package:pocketbase/pocketbase.dart';
 import '../data/category.dart';
 import '../util/secure_storage.dart';
+import 'package:task_spark/service/achievement_service.dart';
 
 class CategoryService {
   final PocketBase pb;
@@ -51,6 +52,10 @@ class CategoryService {
     };
 
     final record = await pb.collection('category').update(id, body: body);
+
+    // 업적 연동: category_sort_use
+    await AchievementService().increaseAchievement('category_sort_use');
+
     return Category.fromRecord(record);
   }
 

@@ -75,7 +75,9 @@ class _InventoryPageState extends State<InventoryPage> {
 
     if (remain <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("아이템이 더 이상 없습니다.")),
+        SnackBar(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            content: Text("아이템이 더 이상 없습니다.")),
       );
       return;
     }
@@ -115,7 +117,9 @@ class _InventoryPageState extends State<InventoryPage> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("${item.title} 아이템을 1개 사용했습니다.")),
+      SnackBar(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          content: Text("${item.title} 아이템을 1개 사용했습니다.")),
     );
 
     try {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
-import 'package:task_spark/ui/pages/achievement_page.dart';
 import 'package:task_spark/data/user.dart';
 import 'package:task_spark/ui/pages/edit_profile_page.dart';
 import 'package:task_spark/ui/pages/item_used_page.dart';
@@ -12,6 +11,7 @@ import '../pages/app_setting_page.dart';
 import '../pages/blocked_user_page.dart';
 import '../pages/inventory_page.dart';
 import '../pages/splash_page.dart';
+import '../pages/achievement_page.dart';
 
 // 2025. 06. 07 : Drawer 경험치 바 업데이트
 // - 구성 요소 관련 페이지 전부 추가

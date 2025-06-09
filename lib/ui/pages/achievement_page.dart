@@ -1,12 +1,18 @@
-// AchievementPage: 업적 리스트를 표시하는 화면
 import 'package:flutter/material.dart';
+import 'package:task_spark/data/item.dart';
 import 'package:task_spark/data/user.dart';
 import 'package:task_spark/data/achievement.dart';
 import 'package:task_spark/service/achievement_service.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:task_spark/service/item_service.dart';
+import 'package:task_spark/ui/widgets/achievement_tile.dart';
+import 'package:task_spark/util/pocket_base.dart';
 
 class AchievementPage extends StatefulWidget {
   final String nickname;
-  final num expRate; // 경험치 비율
+  final num expRate;
   final User myUser;
 
   const AchievementPage({
@@ -16,15 +22,6 @@ class AchievementPage extends StatefulWidget {
     required this.myUser,
   });
 
-  static const List<String> tierNames = [
-    '없음',
-    '브론즈',
-    '실버',
-    '골드',
-    '플래티넘',
-    '다이아'
-  ];
-
   @override
   State<AchievementPage> createState() => _AchievementPageState();
 }
@@ -33,79 +30,7 @@ class _AchievementPageState extends State<AchievementPage> {
   List<Achievement> achievements = [];
   bool isLoading = true;
   Map<String, int> userValues = {};
-
-  // 히든 업적 해금 여부 판단
-  bool _userHasUnlocked(Achievement achievement) {
-    final currentValue = userValues[achievement.type] ?? 0;
-    final requiredValue = achievement.amount.values.first;
-    return currentValue >= requiredValue;
-  }
-
-  Future<void> _fetchAchiv() async {
-    final achivResult = await AchievementService().getAchievementList();
-    final userMetaData = await AchievementService().getCurrentMetaData();
-    setState(() {
-      achievements = achivResult;
-      isLoading = false;
-      userValues = userMetaData;
-    });
-  }
-
-  Widget buildProgressSegments(List<int> tierAmounts, int userValue) {
-    List<int> thresholds = [0];
-    for (var a in tierAmounts) {
-      thresholds.add(thresholds.last + a);
-    }
-
-    return Row(
-      children: List.generate(
-        5,
-        (i) {
-          final start = thresholds[i];
-          final end = thresholds[i + 1];
-
-          double segmentProgress;
-          if (userValue <= start) {
-            segmentProgress = 0.0;
-          } else if (userValue >= end) {
-            segmentProgress = 1.0;
-          } else {
-            segmentProgress = (userValue - start) / (end - start);
-          }
-
-          return Expanded(
-            flex: tierAmounts[i], // 비율에 따라 너비 조절
-            child: Stack(
-              children: [
-                Container(
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: _getTierColorByIndex(i + 1),
-                    borderRadius: i == 0
-                        ? const BorderRadius.horizontal(
-                            left: Radius.circular(4))
-                        : i == 4
-                            ? const BorderRadius.horizontal(
-                                right: Radius.circular(4))
-                            : BorderRadius.zero,
-                  ),
-                ),
-                FractionallySizedBox(
-                  widthFactor: segmentProgress.clamp(0.0, 1.0),
-                  child: Container(
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
+  Map<String, Item> itemMap = {};
 
   @override
   void initState() {
@@ -113,10 +38,225 @@ class _AchievementPageState extends State<AchievementPage> {
     _fetchAchiv();
   }
 
+  bool _userHasUnlocked(Achievement achievement) {
+    final currentValue = userValues[achievement.type] ?? 0;
+    // 해금 조건: 해당 업적의 등급 중 하나라도 만족하면 true
+    for (final tier in ['bronze', 'silver', 'gold', 'platinum', 'diamond']) {
+      final required = achievement.amount[tier];
+      if (required != null && currentValue >= required) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _convertTierKor(String tier) {
+    switch (tier) {
+      case "bronze":
+        return "브론즈";
+      case "silver":
+        return "실버";
+      case "gold":
+        return "골드";
+      case "platinum":
+        return "플레티넘";
+      case "diamond":
+        return "다이아몬드";
+    }
+    return "";
+  }
+
+  Future<void> _fetchAchiv() async {
+    final achivResult = await AchievementService().getAchievementList();
+    final userMetaData = await AchievementService().getCurrentMetaData();
+    final itemList = await ItemService(PocketB().pocketBase).getAllItems();
+    final itemMapData = {for (var item in itemList) item.id: item};
+
+    setState(() {
+      achievements = achivResult;
+      userValues = userMetaData;
+      itemMap = itemMapData;
+      isLoading = false;
+    });
+
+    setState(() {
+      achievements = achivResult;
+      isLoading = false;
+      userValues = userMetaData;
+    });
+
+    print("📦 불러온 아이템 수: ${itemList.length}");
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.infoReverse,
+      animType: AnimType.rightSlide,
+      body: Padding(
+        padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 3.w),
+        child: Text(
+          '비공개 업적을 누르면 힌트가 보여요!',
+          style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+        ),
+      ),
+      btnOkText: "확인",
+      btnOkOnPress: () {},
+    ).show();
+  }
+
+  void _showHintDialog(BuildContext context, Achievement achievement) {
+    AwesomeDialog(
+      context: context,
+      animType: AnimType.scale,
+      dialogType: DialogType.question,
+      body: Column(
+        children: [
+          Text(
+            "업적 힌트",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 2.h),
+          Row(
+            children: [
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(
+                  "${achievement.hint}",
+                  style: TextStyle(fontSize: 15.sp),
+                ),
+              ),
+              SizedBox(width: 10.w),
+            ],
+          ),
+          SizedBox(height: 3.h),
+        ],
+      ),
+      showCloseIcon: true,
+    ).show();
+  }
+
+  void _showRewardDialog(BuildContext context, Achievement achievement) {
+    AwesomeDialog(
+      context: context,
+      animType: AnimType.scale,
+      dialogType: DialogType.infoReverse,
+      showCloseIcon: true,
+      body: Padding(
+        padding: EdgeInsets.all(2.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                '"${achievement.title}" 보상 정보',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18.sp,
+                ),
+              ),
+            ),
+            SizedBox(height: 2.h),
+
+            // 티어별 보상 표시
+            ...["bronze", "silver", "gold", "platinum", "diamond"].map((tier) {
+              final rewardData = achievement.reward?[tier];
+              if (rewardData == null) return SizedBox.shrink();
+
+              List<Widget> rewardWidgets = [];
+
+              // 경험치 보상
+              if (rewardData["exp"] != null) {
+                rewardWidgets.add(
+                  Text(
+                      "• ${achievement.isOnce ? "보상" : _convertTierKor(tier)}: 경험치 ${rewardData["exp"]}XP",
+                      style: TextStyle(fontSize: 15.sp)),
+                );
+              }
+
+              // 아이템 보상
+              if (rewardData["items"] != null && rewardData["items"] is List) {
+                for (var item in rewardData["items"]) {
+                  final String itemId = item["id"];
+                  final int amount = item["amount"];
+                  final String itemName = itemMap[itemId]?.title ?? itemId;
+
+                  rewardWidgets.add(
+                    Text(
+                        "• ${achievement.isOnce ? "보상" : _convertTierKor(tier)}: $itemName × $amount",
+                        style: TextStyle(fontSize: 15.sp)),
+                  );
+                }
+              }
+
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 0.5.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: rewardWidgets,
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+      btnOkText: "확인",
+      btnOkOnPress: () {},
+    ).show();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final visibleAchievements =
-        achievements.where((a) => !a.isHidden || _userHasUnlocked(a)).toList();
+    final visibleAchievements = achievements.where((a) {
+      if (!a.isHidden) return true;
+      return _userHasUnlocked(a); // 히든 업적도 해금됐으면 포함
+    }).toList();
+    visibleAchievements.sort((a, b) {
+      final userValueA = userValues[a.type] ?? 0;
+      final userValueB = userValues[b.type] ?? 0;
+
+      final tierA = AchievementService().getCurrentTierKey(userValueA, a);
+      final tierB = AchievementService().getCurrentTierKey(userValueB, b);
+      final progressA = AchievementService().getProgress(userValueA, a);
+      final progressB = AchievementService().getProgress(userValueB, b);
+
+      // 1. 히든 > 해금된 일회성 > 해금된 일반 > 해금 안된(any)
+      int priority(Achievement ach, String tier) {
+        if (ach.isHidden && tier == 'none') return 0; // 미해금 히든
+        if (tier == 'none') return 3; // 미해금 일반
+        if (ach.isOnce) return 1; // 해금 일회성
+        return 2; // 해금 일반
+      }
+
+      // 1) priority 비교
+      final pA = priority(a, tierA);
+      final pB = priority(b, tierB);
+      final priorityCompare = pA.compareTo(pB);
+      if (priorityCompare != 0) return priorityCompare;
+
+      // 2) 등급 우선순위(다이아 > 플래티넘 > … > none) – 여기서 none 은 이미 뒤로 밀렸으므로 사실상 등급 비교는 해금된 것들끼리만 합니다.
+      int tierValue(String t) => {
+            'diamond': 5,
+            'platinum': 4,
+            'gold': 3,
+            'silver': 2,
+            'bronze': 1,
+            'none': 0,
+          }[t]!;
+      final tierCompare = tierValue(tierB).compareTo(tierValue(tierA));
+      if (tierCompare != 0) return tierCompare;
+
+      // 3) 진행률 높은 순
+      final progressCompare = progressB.compareTo(progressA);
+      if (progressCompare != 0) return progressCompare;
+
+      // 4) 누적값 높은 순
+      return userValueB.compareTo(userValueA);
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -127,131 +267,35 @@ class _AchievementPageState extends State<AchievementPage> {
           onPressed: () => Navigator.pop(context, true),
           color: Theme.of(context).colorScheme.secondary,
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(FontAwesomeIcons.circleQuestion),
+            color: Theme.of(context).colorScheme.secondary,
+            onPressed: () => _showHelpDialog(context),
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                const SizedBox(height: 12),
                 Expanded(
                   child: ListView.builder(
                     itemCount: visibleAchievements.length,
                     itemBuilder: (context, index) {
                       final achievement = visibleAchievements[index];
-                      final int tierIndex = AchievementService()
-                          .getCurrentTierIndex(userValues, achievement);
-                      double progress = AchievementService()
-                          .getProgress(userValues, achievement);
-                      final String tierName =
-                          AchievementPage.tierNames[tierIndex];
+                      final int userValue = userValues[achievement.type] ?? 0;
+                      final isHint = !_userHasUnlocked(achievement);
 
-                      if (progress >= 1.0) {
-                        progress = 1.0;
-                      }
-
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                        elevation: 3,
-                        color: const Color(0xFF2A241F),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(
-                                  tierIndex == 0
-                                      ? Icons.lock
-                                      : Icons.emoji_events,
-                                  size: 40,
-                                  color: _getTierColor(tierName)),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (tierIndex == 0)
-                                      const Padding(
-                                        padding:
-                                            EdgeInsets.symmetric(vertical: 8),
-                                      ),
-                                    (achievement.isHidden &&
-                                                !_userHasUnlocked(
-                                                    achievement) ||
-                                            tierIndex == 0)
-                                        ? const Center(
-                                            child: Text(
-                                              '???',
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          )
-                                        : Text(
-                                            achievement.title,
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                    const SizedBox(height: 4),
-                                    (achievement.isHidden &&
-                                                !_userHasUnlocked(
-                                                    achievement)) ||
-                                            tierIndex == 0
-                                        ? const Center(
-                                            child: Text('해금 전까지 비공개'))
-                                        : Text(
-                                            achievement.description,
-                                            style: TextStyle(
-                                              color: Colors.grey[400],
-                                            ),
-                                          ),
-                                    if (tierIndex > 0)
-                                      const SizedBox(height: 8),
-                                    if (tierIndex == 0)
-                                      const Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              vertical: 4)),
-                                    Stack(
-                                      children: [
-                                        if (tierIndex > 0 &&
-                                            !achievement.isOnce)
-                                          buildProgressSegments(
-                                            achievement.amount.values.toList()
-                                              ..sort((a, b) => a.compareTo(b)),
-                                            userValues[achievement.type] ?? 0,
-                                          ),
-                                        FractionallySizedBox(
-                                          widthFactor: progress.clamp(0.0, 1.0),
-                                          child: Container(
-                                            height: 8,
-                                            decoration: BoxDecoration(
-                                              color: _getTierColor(tierName),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    if (tierIndex > 0)
-                                      const SizedBox(height: 4),
-                                    if (tierIndex > 0)
-                                      Text(
-                                        '$tierName 등급 • ${(progress * 100).toInt()}% 진행 중',
-                                        style: const TextStyle(
-                                            fontSize: 12, color: Colors.white),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      return AchievementTile(
+                        achievement: achievement,
+                        currentValue: userValue,
+                        isUnlocked: _userHasUnlocked(achievement),
+                        onTap: () {
+                          isHint
+                              ? _showHintDialog(context, achievement)
+                              : _showRewardDialog(context, achievement);
+                        },
                       );
                     },
                   ),
@@ -259,43 +303,5 @@ class _AchievementPageState extends State<AchievementPage> {
               ],
             ),
     );
-  }
-
-  //업적 페이지 프로필 바
-
-  Color _getTierColor(String tier) {
-    switch (tier) {
-      case '없음':
-        return Colors.grey.shade300;
-      case '브론즈':
-        return const Color(0xFFCD7F32); // 브론즈
-      case '실버':
-        return const Color(0xFFC0C0C0); // 실버
-      case '골드':
-        return const Color(0xFFFFD700); // 골드
-      case '플래티넘':
-        return const Color(0xFF88B4C4); // 플래티넘 (Powder Blue)
-      case '다이아':
-        return const Color(0xFF00FFFF); // 다이아
-      default:
-        return Colors.grey.shade300;
-    }
-  }
-
-  Color _getTierColorByIndex(int index) {
-    switch (index) {
-      case 1:
-        return const Color(0xFFCD7F32); // 브론즈
-      case 2:
-        return const Color(0xFFC0C0C0); // 실버
-      case 3:
-        return const Color(0xFFFFD700); // 골드
-      case 4:
-        return const Color(0xFF88B4C4); // 플래티넘
-      case 5:
-        return const Color(0xFF00FFFF); // 다이아
-      default:
-        return Colors.grey.shade300;
-    }
   }
 }
