@@ -1,14 +1,14 @@
-// achievement_page.dart
-// 업적 리스트 페이지 UI 및 로직 처리. 히든 업적은 해금 시 일반 업적처럼 보이고, 해금 전엔 아예 보이지 않음.
-
 import 'package:flutter/material.dart';
+import 'package:task_spark/data/item.dart';
 import 'package:task_spark/data/user.dart';
 import 'package:task_spark/data/achievement.dart';
 import 'package:task_spark/service/achievement_service.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:task_spark/service/item_service.dart';
 import 'package:task_spark/ui/widgets/achievement_tile.dart';
+import 'package:task_spark/util/pocket_base.dart';
 
 class AchievementPage extends StatefulWidget {
   final String nickname;
@@ -30,6 +30,13 @@ class _AchievementPageState extends State<AchievementPage> {
   List<Achievement> achievements = [];
   bool isLoading = true;
   Map<String, int> userValues = {};
+  Map<String, Item> itemMap = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAchiv();
+  }
 
   bool _userHasUnlocked(Achievement achievement) {
     final currentValue = userValues[achievement.type] ?? 0;
@@ -46,17 +53,29 @@ class _AchievementPageState extends State<AchievementPage> {
   Future<void> _fetchAchiv() async {
     final achivResult = await AchievementService().getAchievementList();
     final userMetaData = await AchievementService().getCurrentMetaData();
+    final itemList = await ItemService(PocketB().pocketBase).getAllItems();
+    final itemMapData = {for (var item in itemList) item.id: item};
+
+    setState(() {
+      achievements = achivResult;
+      userValues = userMetaData;
+      itemMap = itemMapData;
+      isLoading = false;
+    });
+
     setState(() {
       achievements = achivResult;
       isLoading = false;
       userValues = userMetaData;
     });
+
+    print("📦 불러온 아이템 수: ${itemList.length}");
   }
 
   void _showHelpDialog(BuildContext context) {
     AwesomeDialog(
       context: context,
-      dialogType: DialogType.noHeader,
+      dialogType: DialogType.infoReverse,
       animType: AnimType.rightSlide,
       body: Padding(
         padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 3.w),
@@ -105,10 +124,78 @@ class _AchievementPageState extends State<AchievementPage> {
     ).show();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchAchiv();
+  void _showRewardDialog(BuildContext context, Achievement achievement) {
+    AwesomeDialog(
+      context: context,
+      animType: AnimType.scale,
+      dialogType: DialogType.infoReverse,
+      showCloseIcon: true,
+      body: Padding(
+        padding: EdgeInsets.all(2.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                '"${achievement.title}" 보상 정보',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18.sp,
+                ),
+              ),
+            ),
+            SizedBox(height: 2.h),
+
+            // 티어별 보상 표시
+            ...["bronze", "silver", "gold", "platinum", "diamond"].map((tier) {
+              final rewardData = achievement.reward?[tier];
+              if (rewardData == null) return SizedBox.shrink();
+
+              List<Widget> rewardWidgets = [];
+
+              // 경험치 보상
+              if (rewardData["exp"] != null) {
+                rewardWidgets.add(
+                  Text("• $tier: 경험치 ${rewardData["exp"]}XP",
+                      style: TextStyle(fontSize: 15.sp)),
+                );
+              }
+
+              // 아이템 보상
+              if (rewardData["items"] != null && rewardData["items"] is List) {
+                for (var item in rewardData["items"]) {
+                  final String itemId = item["id"];
+                  final int amount = item["amount"];
+                  final String itemName = itemMap[itemId]?.title ?? itemId;
+
+                  rewardWidgets.add(
+                    Text("• $tier: $itemName × $amount",
+                        style: TextStyle(fontSize: 15.sp)),
+                  );
+                }
+              }
+              print("🎯 보상 아이템 ID들:");
+              if (rewardData["items"] != null) {
+                for (var item in rewardData["items"]) {
+                  final itemId = item["id"];
+                  print("🆔 $itemId → ${itemMap[itemId]?.title}");
+                }
+              }
+
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 0.5.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: rewardWidgets,
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+      btnOkText: "확인",
+      btnOkOnPress: () {},
+    ).show();
   }
 
   @override
@@ -128,11 +215,10 @@ class _AchievementPageState extends State<AchievementPage> {
 
       // 1. 히든 > 해금된 일회성 > 해금된 일반 > 해금 안된(any)
       int priority(Achievement ach, String tier) {
-        if (ach.isHidden) return 0;
-        // 아직 해금 안된 업적은 제일 마지막(큰 숫자)
-        if (tier == 'none') return 3;
-        if (ach.isOnce) return 1;
-        return 2;
+        if (ach.isHidden && tier == 'none') return 0; // 미해금 히든
+        if (tier == 'none') return 3; // 미해금 일반
+        if (ach.isOnce) return 1; // 해금 일회성
+        return 2; // 해금 일반
       }
 
       // 1) priority 비교
@@ -188,28 +274,16 @@ class _AchievementPageState extends State<AchievementPage> {
                     itemBuilder: (context, index) {
                       final achievement = visibleAchievements[index];
                       final int userValue = userValues[achievement.type] ?? 0;
+                      final isHint = !_userHasUnlocked(achievement);
 
                       return AchievementTile(
                         achievement: achievement,
                         currentValue: userValue,
                         isUnlocked: _userHasUnlocked(achievement),
                         onTap: () {
-                          // 👉 디버깅 로그 추가
-                          print(
-                              '[힌트탭] ${achievement.title} | isHidden: ${achievement.isHidden}, isUnlocked: ${_userHasUnlocked(achievement)}');
-
-                          if (achievement.isHidden == false &&
-                              !_userHasUnlocked(achievement)) {
-                            if ((achievement.hint ?? '').trim().isNotEmpty) {
-                              _showHintDialog(context, achievement);
-                            } else {
-                              print('[경고] 힌트가 비어있습니다: ${achievement.title}');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text("아직 힌트를 준비 중이에요!")),
-                              );
-                            }
-                          }
+                          isHint
+                              ? _showHintDialog(context, achievement)
+                              : _showRewardDialog(context, achievement);
                         },
                       );
                     },

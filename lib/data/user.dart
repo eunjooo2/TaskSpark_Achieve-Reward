@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:task_spark/service/achievement_service.dart';
 
-import 'dart:convert';
-
 class User {
   String? collectionId;
   String? collectionName;

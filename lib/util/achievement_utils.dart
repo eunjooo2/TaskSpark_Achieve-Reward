@@ -29,12 +29,19 @@ List<int> getThresholds(Map<String, int> amountMap) {
 }
 
 /// 현재 값에 해당하는 등급 인덱스 계산
-int getTierIndex(Map<String, dynamic> amount, int current) {
-  for (int i = tierKeys.length - 1; i >= 0; i--) {
-    if (current >= (amount[tierKeys[i]] ?? 999999)) {
-      return i + 1; // 1부터 시작하도록 보정
+int getTierIndex(Map<String, int> amount, int current) {
+  // 1) 키–값 쌍을 리스트로 꺼내서 값으로 정렬
+  final sorted = amount.entries.toList()
+    ..sort((a, b) => a.value.compareTo(b.value));
+
+  // 2) 뒤에서부터(current가 크거나 같은) 첫 임계치 찾기
+  for (int i = sorted.length - 1; i >= 0; i--) {
+    if (current >= sorted[i].value) {
+      // i+1을 반환하면 1부터 시작하는 인덱스가 됩니다.
+      return i + 1;
     }
   }
+  // 어느 것도 못 넘으면 0
   return 0;
 }
 

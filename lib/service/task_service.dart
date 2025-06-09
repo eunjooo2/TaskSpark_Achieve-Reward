@@ -111,7 +111,21 @@ class TaskService {
 
     await userService.grantExperienceToUser(exp);
     await AchievementService().updateMetaDataWithKey("complete_routine", 1);
+    if (task.isRepeatingTask == true && task.repeatPeriod != null) {
+      final repeatDays = int.tryParse(task.repeatPeriod!) ?? 0;
 
+      if (repeatDays > 0) {
+        final newTask = task.copyWith(
+          id: null,
+          startDate: task.startDate?.add(Duration(days: repeatDays)),
+          endDate: task.endDate?.add(Duration(days: repeatDays)),
+          isDone: false,
+          created: null,
+          updated: null,
+        );
+        await createTask(newTask);
+      }
+    }
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final yesterday = DateFormat('yyyy-MM-dd')
         .format(DateTime.now().subtract(Duration(days: 1)));
@@ -132,6 +146,8 @@ class TaskService {
 
     await AchievementService()
         .updateMetaDataWithKey("complete_routine_streak", count);
+
+    await toggleDone(task);
   }
 
   Future<int> getTaskGoalCount(String userId) async {

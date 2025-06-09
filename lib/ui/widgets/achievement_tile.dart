@@ -26,7 +26,7 @@ class AchievementTile extends StatelessWidget {
       case 3:
         return const Color(0xFFFFD700); // 골드
       case 4:
-        return const Color(0xFF88B4C4); // 플래티넘
+        return const Color(0xFF00EF55); // 플래티넘
       case 5:
         return const Color(0xFF00FFFF); // 다이아
       default:
@@ -51,8 +51,8 @@ class AchievementTile extends StatelessWidget {
     double progress;
 
     if (achievement.isOnce) {
-      final required = achievement.amount['diamond'] ?? 1;
-      final achieved = currentValue >= required;
+      final require = achievement.amount['diamond'] ?? 1;
+      final achieved = currentValue >= require;
       tierIndex = achieved ? 5 : 0;
       progress = achieved ? 1.0 : 0.0;
     } else {
@@ -61,25 +61,15 @@ class AchievementTile extends StatelessWidget {
       if (tierIndex >= 5 || tierIndex >= tierOrder.length - 1) {
         progress = 1.0;
       } else {
-        final currentTierKey = tierOrder[tierIndex];
-        final nextTierKey = tierOrder[tierIndex + 1];
-        final currentRequired = achievement.amount[currentTierKey] ?? 0;
-        final nextRequired = achievement.amount[nextTierKey] ?? 0;
-        final span = nextRequired - currentRequired;
-        final filled = currentValue - currentRequired;
-        progress = span > 0 ? (filled / span).clamp(0.0, 1.0) : 0.0;
+        progress = currentValue / (achievement.amount["diamond"] ?? 1.0);
       }
     }
 
-    final tierName = getTierNameKor(tierIndex);
     final isHiddenUnlocked = achievement.isHidden && isUnlocked;
-    final isOnceUnlocked = achievement.isOnce && isUnlocked;
 
     return GestureDetector(
       onTap: () {
-        if (!isUnlocked && onTap != null) {
-          onTap!();
-        }
+        onTap!();
       },
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -147,7 +137,7 @@ class AchievementTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     if (isUnlocked || (achievement.isOnce && tierIndex == 5))
                       Text(
-                        '$tierName 등급 • ${(progress * 100).toInt()}% 진행 중',
+                        '전체 • ${(progress * 100).toInt()}% 진행 중',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.white,
