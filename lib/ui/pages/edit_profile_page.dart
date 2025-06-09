@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../data/user.dart';
@@ -95,6 +96,47 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
               SizedBox(height: 4.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                margin: EdgeInsets.only(bottom: 2.h),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 18, 13, 8),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade400),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'UID: ${widget.user.id ?? "없음"}',
+                      style: TextStyle(fontSize: 16.sp), // fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(
+                      width: 8.w,
+                      height: 8.w,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 43, 36, 21),
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: widget.user.id ?? ''),
+                          );
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('UID가 복사되었습니다.')),
+                          );
+                        },
+                        child: const Icon(Icons.copy, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: "이름 (5자 이내)"),

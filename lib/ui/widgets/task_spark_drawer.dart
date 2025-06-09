@@ -258,6 +258,7 @@ class _TaskSparkDrawerState extends State<TaskSparkDrawer> {
                         logout();
                       }),
                       _buildDividerWithText("설정", context),
+                      /*
                       _getDrawerIconRow(FontAwesomeIcons.gear, "앱 설정", () {
                         Navigator.push(
                           context,
@@ -266,7 +267,8 @@ class _TaskSparkDrawerState extends State<TaskSparkDrawer> {
                           ),
                         );
                       }),
-                      _getDrawerIconRow(FontAwesomeIcons.userLock, "차단 친구 설정",
+                       */
+                      _getDrawerIconRow(FontAwesomeIcons.userLock, "차단 친구 관리",
                           () {
                         Navigator.push(
                           context,
