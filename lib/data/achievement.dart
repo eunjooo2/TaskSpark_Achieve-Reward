@@ -1,6 +1,6 @@
 // achievement.dart
 // 업적 데이터 모델 클래스. PocketBase record를 JSON으로 변환하거나, JSON을 객체로 생성하는 기능 포함.
-
+ 
 import 'package:pocketbase/pocketbase.dart';
 
 class Achievement {
