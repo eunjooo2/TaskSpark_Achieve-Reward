@@ -1,3 +1,4 @@
+// 유저(User) 관련 모델 정의 파일
 import 'dart:convert';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:task_spark/service/achievement_service.dart';
