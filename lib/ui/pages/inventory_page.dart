@@ -4,7 +4,7 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:task_spark/data/user.dart';
 import 'package:task_spark/data/item.dart';
 import 'package:task_spark/service/item_service.dart';
-import 'package:task_spark/service/user_service.dart';
+import 'package:task_spark/service/user_service.dart'; 
 import 'package:task_spark/util/pocket_base.dart';
 
 class InventoryPage extends StatefulWidget {
