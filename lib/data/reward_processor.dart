@@ -2,7 +2,7 @@ import 'package:task_spark/data/achievement.dart';
 import 'package:task_spark/data/user.dart';
 import 'package:task_spark/service/user_service.dart';
 import 'package:task_spark/service/achievement_service.dart';
-
+ 
 /// 업적 보상 지급 유틸리티 (경험치, 아이템)
 class RewardProcessor {
   /// 보상 지급: 업적 객체와 등급명 전달 (e.g. 'bronze')
