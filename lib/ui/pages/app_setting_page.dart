@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+ 
 // 2025. 06. 07 : 앱 설정 화면 추가(다크 모드 토글 설정 구현 필요)
 class AppSettingsPage extends StatelessWidget {
   const AppSettingsPage({super.key});
