@@ -35,29 +35,29 @@ class RewardProcessor {
 
         print('[보상 지급] 아이템 $id x$amount');
 
-        // ✅ 업적: 도전장 사용 업적
+        // 업적: 도전장 사용 업적
         if (id == "라이벌 신청권") {
           await AchievementService()
               .updateMetaDataWithKey("rival_challenge", amount);
           print("[업적] rival_challenge +$amount");
         }
 
-        // ✅ 업적: 경험치 부스트 아이템 사용
+        //  업적: 경험치 부스트 아이템 사용
         if (id == "경험치 부스트") {
           await AchievementService().increaseAchievement("use_boost_item");
           print("[업적] use_boost_item +1");
         }
 
-        // ✅ 업적: 방어권 아이템 사용
+        //  업적: 방어권 아이템 사용
         if (id == "방어권") {
           await AchievementService().increaseAchievement("use_shield_item");
           print("[업적] use_shield_item +1");
         }
 
-        // ⭐ 경험치 및 레벨 메타데이터 갱신
+        //  경험치 및 레벨 메타데이터 갱신
         user.updateExpAndLevel();
 
-        // 🛠️ 서버에 업데이트 반영
+        // 서버에 업데이트 반영
         await UserService().updateUserByID(user.id!, {
           "exp": user.exp,
           "metadata": user.metadata,
