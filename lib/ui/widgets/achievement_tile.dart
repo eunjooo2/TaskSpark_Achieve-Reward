@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_spark/data/achievement.dart';
 import 'package:task_spark/ui/widgets/achievement_progress_bar.dart';
-import 'package:task_spark/util/achievement_utils.dart';
+import 'package:task_spark/util/achievement_utils.dart'; 
 
 class AchievementTile extends StatelessWidget {
   final Achievement achievement;
