@@ -6,7 +6,7 @@ import 'package:task_spark/util/secure_storage.dart';
 import 'package:task_spark/data/user.dart';
 
 // 2025. 06. 07 : 차단 친구 설정 화면 추가
-// - 차단 해제 적용 테스트 완료
+// - 차단 해제 적용 테스트 완료 
 class BlockedUserPage extends StatefulWidget {
   const BlockedUserPage({super.key});
 
