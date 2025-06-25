@@ -5,7 +5,7 @@ import 'package:task_spark/data/user.dart';
 import 'package:task_spark/ui/pages/edit_profile_page.dart';
 import 'package:task_spark/ui/pages/item_used_page.dart';
 import 'package:task_spark/util/secure_storage.dart';
-import 'package:task_spark/service/user_service.dart';
+import 'package:task_spark/service/user_service.dart'; 
 
 import '../pages/app_setting_page.dart';
 import '../pages/blocked_user_page.dart';
