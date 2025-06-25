@@ -5,7 +5,7 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:task_spark/ui/widgets/friend_expanision.dart';
 import 'package:task_spark/ui/widgets/rival_expanision.dart';
 import 'package:task_spark/data/friend.dart';
-import 'package:task_spark/data/rival.dart';
+import 'package:task_spark/data/rival.dart'; 
 import 'package:task_spark/data/user.dart';
 import 'package:task_spark/util/secure_storage.dart';
 import 'package:task_spark/service/friend_service.dart';
